@@ -97,18 +97,12 @@ export function AppShell({ children }: { children?: ReactNode }) {
             style={{ width: collapsed ? railW : expandedW }}
           >
             <div className={["pt-5 pb-6 flex items-center", collapsed ? "px-3 justify-center" : "px-5 justify-between"].join(" ")}>
-              <Link to="/" className="flex items-center gap-2.5 min-w-0">
+              <Link to="/" className="flex items-center min-w-0">
                 <img
                   src={collapsed ? logoCollapsed : logoExpanded}
                   alt="MetalCloud"
-                  className={collapsed ? "w-9 h-9 object-contain shrink-0" : "h-9 w-auto object-contain shrink-0"}
+                  className={collapsed ? "h-9 w-auto object-contain shrink-0" : "h-9 w-auto object-contain shrink-0 max-w-[170px]"}
                 />
-                {!collapsed && (
-                  <div className="leading-tight overflow-hidden whitespace-nowrap">
-                    <div className="font-display font-semibold text-[15px] tracking-tight">MetalCloud</div>
-                    <div className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Expansion OS</div>
-                  </div>
-                )}
               </Link>
               {!collapsed && (
                 <button
