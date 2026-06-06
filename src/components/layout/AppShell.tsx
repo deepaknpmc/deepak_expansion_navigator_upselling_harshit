@@ -112,11 +112,11 @@ export function AppShell({ children }: { children?: ReactNode }) {
                   title="Expand sidebar"
                   className="flex items-center min-w-0"
                 >
-                  <img src={logoCollapsed} alt="MetalCloud" className="h-9 w-auto object-contain shrink-0" />
+                  <img src={logoCollapsed} alt="MetalCloud" className="h-[29px] w-auto object-contain shrink-0" />
                 </button>
               ) : (
                 <Link to="/" className="flex items-center min-w-0">
-                  <img src={logoExpanded} alt="MetalCloud" className="h-9 w-auto object-contain shrink-0 max-w-[170px]" />
+                  <img src={logoExpanded} alt="MetalCloud" className="h-[29px] w-auto object-contain shrink-0 max-w-[136px]" />
                 </Link>
               )}
               {!collapsed && (
