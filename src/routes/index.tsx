@@ -164,7 +164,7 @@ function CommandCenter() {
                 const max = byState[0].value;
                 return (
                   <div key={s.state} className="flex items-center gap-3">
-                    <div className="w-8 text-[11px] font-mono text-muted-foreground">{s.state}</div>
+                    <div className="w-24 shrink-0 truncate text-[11px] font-mono text-muted-foreground" title={s.state}>{s.state}</div>
                     <div className="flex-1 h-7 rounded bg-surface-raised relative overflow-hidden">
                       <div
                         className="h-full rounded transition-all"

@@ -1,10 +1,11 @@
-import { Link, Outlet, useRouterState } from "@tanstack/react-router";
+import { Link, Outlet, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
-  LayoutDashboard, Grid3x3, Target, Users, BarChart3, Settings,
+  LayoutDashboard, Grid3x3, Target, Users, BarChart3,
   Bell, Search, Command, Sparkles, PanelLeftClose, PanelLeftOpen,
-  Maximize2, Minimize2,
+  Maximize2, Minimize2, LogOut,
 } from "lucide-react";
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { useAuth } from "@/hooks/use-auth";
 
 const nav: { to: string; label: string; icon: typeof LayoutDashboard; exact?: boolean }[] = [
   { to: "/", label: "Command Center", icon: LayoutDashboard, exact: true },
@@ -12,7 +13,6 @@ const nav: { to: string; label: string; icon: typeof LayoutDashboard; exact?: bo
   { to: "/opportunities", label: "Opportunities", icon: Target },
   { to: "/customers", label: "Customers", icon: Users },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
-  { to: "/settings", label: "Settings", icon: Settings },
 ];
 
 type ShellCtx = {
@@ -32,13 +32,36 @@ export const useAppShell = () => {
 const LS_COLLAPSED = "metalcloud_sidebar_collapsed_v1";
 const LS_FOCUS = "metalcloud_focus_mode_v1";
 
+const railW = 64; // collapsed rail width
+const expandedW = 240; // hover/expanded overlay width
+
 export function AppShell({ children }: { children?: ReactNode }) {
   const { location } = useRouterState();
   const path = location.pathname;
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
 
   const [collapsed, setCollapsed] = useState<boolean>(true);
   const [focusMode, setFocusMode] = useState<boolean>(false);
   const [hydrated, setHydrated] = useState(false);
+  const overlayRef = useRef<HTMLDivElement>(null);
+
+  const displayName = user?.name || user?.email || "Account";
+  const initials =
+    (user?.name
+      ? user.name.trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join("")
+      : (user?.email?.[0] ?? "?")
+    ).toUpperCase();
+
+  // Fold the hover-expanded rail back after a nav click (collapsed mode only).
+  const collapseOverlay = () => {
+    if (collapsed && overlayRef.current) overlayRef.current.style.width = `${railW}px`;
+  };
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate({ to: "/login", replace: true });
+  };
 
   useEffect(() => {
     try {
@@ -66,12 +89,9 @@ export function AppShell({ children }: { children?: ReactNode }) {
     toggleFocusMode: () => setFocusMode((v) => !v),
   };
 
-  const railW = 64;     // collapsed rail width
-  const expandedW = 240; // hover/expanded overlay width
-
   return (
     <ShellContext.Provider value={ctx}>
-      <div className="min-h-screen flex bg-background text-foreground">
+      <div className="h-screen flex bg-background text-foreground overflow-hidden">
         {/* Sidebar */}
         {!focusMode && (
           <aside
@@ -80,6 +100,7 @@ export function AppShell({ children }: { children?: ReactNode }) {
           >
             {/* Hover overlay when collapsed: expands visually without shifting main content */}
             <div
+              ref={overlayRef}
               className={[
                 "flex flex-col h-full",
                 collapsed
@@ -123,6 +144,7 @@ export function AppShell({ children }: { children?: ReactNode }) {
                     <Link
                       key={item.to}
                       to={item.to as any}
+                      onClick={collapseOverlay}
                       title={collapsed ? item.label : undefined}
                       className={[
                         "flex items-center gap-3 rounded-md text-[13px] font-medium transition-all relative group",
@@ -152,19 +174,29 @@ export function AppShell({ children }: { children?: ReactNode }) {
                     >
                       <PanelLeftOpen className="w-4 h-4" />
                     </button>
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-accent to-primary flex items-center justify-center text-xs font-semibold text-primary-foreground">
-                      HS
+                    <div
+                      className="w-8 h-8 rounded-full bg-gradient-to-br from-accent to-primary flex items-center justify-center text-xs font-semibold text-primary-foreground"
+                      title={displayName}
+                    >
+                      {initials}
                     </div>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-3 p-2 rounded-md hover:bg-sidebar-accent/50 cursor-pointer">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-accent to-primary flex items-center justify-center text-xs font-semibold text-primary-foreground">
-                      HS
+                  <div className="flex items-center gap-3 p-2 rounded-md hover:bg-sidebar-accent/50">
+                    <div className="w-8 h-8 shrink-0 rounded-full bg-gradient-to-br from-accent to-primary flex items-center justify-center text-xs font-semibold text-primary-foreground">
+                      {initials}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-[13px] font-medium leading-tight">Harshit</div>
-                      <div className="text-[11px] text-muted-foreground leading-tight">CS Head</div>
+                      <div className="text-[13px] font-medium leading-tight truncate" title={displayName}>{displayName}</div>
+                      <div className="text-[11px] text-muted-foreground leading-tight">MetalCloud</div>
                     </div>
+                    <button
+                      onClick={handleLogout}
+                      title="Sign out"
+                      className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/60 transition-colors"
+                    >
+                      <LogOut className="w-4 h-4" />
+                    </button>
                   </div>
                 )}
               </div>
@@ -173,7 +205,7 @@ export function AppShell({ children }: { children?: ReactNode }) {
         )}
 
         {/* Main */}
-        <main className="flex-1 min-w-0 flex flex-col">
+        <main className="flex-1 min-w-0 flex flex-col overflow-hidden">
           {!focusMode && (
             <header className="h-14 border-b border-border bg-background/80 backdrop-blur sticky top-0 z-30 flex items-center px-6 gap-4">
               <div className="flex-1 max-w-md">
@@ -212,7 +244,7 @@ export function AppShell({ children }: { children?: ReactNode }) {
               Exit Focus
             </button>
           )}
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 overflow-auto">
             {children ?? <Outlet />}
           </div>
         </main>

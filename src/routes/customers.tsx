@@ -57,21 +57,24 @@ function CustomersPage() {
             <button
               key={c.id}
               onClick={() => setOpenId(c.id)}
-              className="text-left p-4 rounded-xl border border-border bg-card hover:border-border-strong hover:bg-surface transition-all group"
+              className="text-left p-4 rounded-xl border border-border bg-card hover:border-border-strong hover:bg-surface transition-all group flex flex-col h-[180px]"
             >
-              <div className="flex items-start justify-between mb-3">
+              {/* Header (fixed) */}
+              <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <div className="font-medium text-[14px] truncate group-hover:text-primary transition-colors">{c.name}</div>
-                  <div className="text-[11px] text-muted-foreground mt-0.5">{c.cluster} · {c.state} · {c.castingType}</div>
+                  <div className="text-[11px] text-muted-foreground mt-0.5 truncate" title={`${c.cluster} · ${c.state} · ${c.castingType}`}>{c.cluster} · {c.state} · {c.castingType}</div>
                 </div>
                 <TierBadge tier={c.icpTier} />
               </div>
-              <div className="grid grid-cols-3 gap-2 mb-3 pb-3 border-b border-border">
+              {/* Body */}
+              <div className="grid grid-cols-3 gap-2 mt-3">
                 <Mini label="Turnover" v={`₹${c.turnover}Cr`} />
                 <Mini label="Units" v={String(c.units)} />
                 <Mini label="Adoption" v={`${c.adoption}%`} />
               </div>
-              <div className="flex items-center justify-between">
+              {/* Footer (pinned to bottom) */}
+              <div className="flex items-center justify-between mt-auto pt-3 border-t border-border">
                 <div className="min-w-0">
                   <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Pipeline</div>
                   <div className="font-mono text-[14px] font-semibold">₹{c.upsellValue.toFixed(1)} L</div>
