@@ -102,7 +102,15 @@ export function CustomersProvider({ children }: { children: ReactNode }) {
 
   const update = useCallback((id: string, patch: Partial<Customer>) => {
     setCustomers((prev) => {
-      const next = prev.map((c) => (c.id === id ? { ...c, ...patch } : c));
+      const next = prev.map((c) => {
+        if (c.id !== id) return c;
+        const merged = { ...c, ...patch };
+        // Stamp when the opportunity status actually changes (drives sectioning).
+        if (patch.status !== undefined && patch.status !== c.status) {
+          merged.statusChangedAt = new Date().toISOString();
+        }
+        return merged;
+      });
       const updated = next.find((c) => c.id === id);
       if (updated) persist(updated);
       return next;

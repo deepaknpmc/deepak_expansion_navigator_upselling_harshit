@@ -59,6 +59,8 @@ export interface Customer {
   status: OpportunityStatus;
   nextStep: string;
   notes: string;
+  /** ISO timestamp of the last opportunity-status change (used for sectioning). */
+  statusChangedAt?: string;
 }
 
 // Map any legacy status strings that may appear in stored data / JSON.
@@ -157,6 +159,7 @@ const normalize = (raw: any): Customer => {
     status: (STATUS_MAP[raw.status] ?? "Identified") as OpportunityStatus,
     nextStep: raw.nextStep ?? "",
     notes: raw.notes ?? "",
+    statusChangedAt: raw.statusChangedAt ?? undefined,
   };
 };
 
