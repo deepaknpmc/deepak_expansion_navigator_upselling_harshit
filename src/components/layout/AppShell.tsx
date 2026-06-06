@@ -46,6 +46,7 @@ export function AppShell({ children }: { children?: ReactNode }) {
   const [collapsed, setCollapsed] = useState<boolean>(true);
   const [focusMode, setFocusMode] = useState<boolean>(false);
   const [hydrated, setHydrated] = useState(false);
+  const [confirmLogout, setConfirmLogout] = useState(false);
 
   const displayName = user?.name || user?.email || "Account";
   const initials =
@@ -158,7 +159,7 @@ export function AppShell({ children }: { children?: ReactNode }) {
                     <PanelLeftOpen className="w-4 h-4" />
                   </button>
                   <button
-                    onClick={handleLogout}
+                    onClick={() => setConfirmLogout(true)}
                     title={`Sign out (${displayName})`}
                     className="w-8 h-8 rounded-full bg-gradient-to-br from-accent to-primary flex items-center justify-center text-xs font-semibold text-primary-foreground"
                   >
@@ -175,7 +176,7 @@ export function AppShell({ children }: { children?: ReactNode }) {
                     <div className="text-[11px] text-muted-foreground leading-tight">MetalCloud</div>
                   </div>
                   <button
-                    onClick={handleLogout}
+                    onClick={() => setConfirmLogout(true)}
                     title="Sign out"
                     className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/60 transition-colors"
                   >
@@ -231,6 +232,38 @@ export function AppShell({ children }: { children?: ReactNode }) {
             {children ?? <Outlet />}
           </div>
         </main>
+
+        {/* Logout confirmation */}
+        {confirmLogout && (
+          <div
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm"
+            onClick={() => setConfirmLogout(false)}
+          >
+            <div
+              className="w-full max-w-sm mx-4 rounded-xl border border-border bg-surface p-5 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="text-[15px] font-semibold">Sign out?</h2>
+              <p className="text-[12px] text-muted-foreground mt-1">
+                You'll need to sign in again to access the workspace.
+              </p>
+              <div className="flex justify-end gap-2 mt-5">
+                <button
+                  onClick={() => setConfirmLogout(false)}
+                  className="h-9 px-3 rounded-md border border-border text-[12px] font-medium hover:bg-surface-raised transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => { setConfirmLogout(false); void handleLogout(); }}
+                  className="h-9 px-3 rounded-md bg-destructive text-destructive-foreground text-[12px] font-medium hover:opacity-90 inline-flex items-center gap-1.5 transition-opacity"
+                >
+                  <LogOut className="w-3.5 h-3.5" /> Sign out
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </ShellContext.Provider>
   );

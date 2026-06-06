@@ -104,20 +104,15 @@ function CustomersPage() {
           )}
         </div>
 
-        {/* Sections */}
+        {/* Sections — empty sections are hidden entirely. */}
         <div className="space-y-4">
-          {sections.map((s) => {
-            const disabled = s.items.length === 0;
-            const isOpen = open[s.key] && !disabled;
+          {sections.filter((s) => s.items.length > 0).map((s) => {
+            const isOpen = open[s.key];
             return (
               <div key={s.key} className="rounded-xl border border-border bg-surface/40">
                 <button
-                  disabled={disabled}
                   onClick={() => setOpen((o) => ({ ...o, [s.key]: !o[s.key] }))}
-                  className={[
-                    "w-full flex items-center justify-between px-4 py-3 rounded-xl text-left transition-colors",
-                    disabled ? "opacity-40 cursor-not-allowed" : "hover:bg-surface-raised/50",
-                  ].join(" ")}
+                  className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-left transition-colors hover:bg-surface-raised/50"
                 >
                   <div className="flex items-center gap-2.5">
                     <ChevronDown className={["w-4 h-4 text-muted-foreground transition-transform", isOpen ? "" : "-rotate-90"].join(" ")} />
