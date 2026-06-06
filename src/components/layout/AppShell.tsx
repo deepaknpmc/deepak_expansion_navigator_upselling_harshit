@@ -35,7 +35,13 @@ const LS_COLLAPSED = "metalcloud_sidebar_collapsed_v1";
 const LS_FOCUS = "metalcloud_focus_mode_v1";
 
 const railW = 64; // collapsed rail width
-const expandedW = 240; // hover/expanded overlay width
+const expandedW = 240; // expanded width
+
+// AppShell re-mounts on each route change. Cache the collapsed state at module
+// scope so a fresh mount initializes to the correct width immediately — without
+// this, every navigation reset to the default then re-read localStorage, which
+// animated the sidebar width back and forth.
+let collapsedCache: boolean | null = null;
 
 export function AppShell({ children }: { children?: ReactNode }) {
   const { location } = useRouterState();
@@ -43,10 +49,13 @@ export function AppShell({ children }: { children?: ReactNode }) {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
 
-  const [collapsed, setCollapsed] = useState<boolean>(true);
+  const [collapsed, setCollapsed] = useState<boolean>(collapsedCache ?? true);
   const [focusMode, setFocusMode] = useState<boolean>(false);
   const [hydrated, setHydrated] = useState(false);
   const [confirmLogout, setConfirmLogout] = useState(false);
+
+  // Keep the cross-mount cache in sync so the next navigation starts correct.
+  useEffect(() => { collapsedCache = collapsed; }, [collapsed]);
 
   const displayName = user?.name || user?.email || "Account";
   const initials =
@@ -97,13 +106,19 @@ export function AppShell({ children }: { children?: ReactNode }) {
             style={{ width: collapsed ? railW : expandedW }}
           >
             <div className={["pt-5 pb-6 flex items-center", collapsed ? "px-3 justify-center" : "px-5 justify-between"].join(" ")}>
-              <Link to="/" className="flex items-center min-w-0">
-                <img
-                  src={collapsed ? logoCollapsed : logoExpanded}
-                  alt="MetalCloud"
-                  className={collapsed ? "h-9 w-auto object-contain shrink-0" : "h-9 w-auto object-contain shrink-0 max-w-[170px]"}
-                />
-              </Link>
+              {collapsed ? (
+                <button
+                  onClick={() => setCollapsed(false)}
+                  title="Expand sidebar"
+                  className="flex items-center min-w-0"
+                >
+                  <img src={logoCollapsed} alt="MetalCloud" className="h-9 w-auto object-contain shrink-0" />
+                </button>
+              ) : (
+                <Link to="/" className="flex items-center min-w-0">
+                  <img src={logoExpanded} alt="MetalCloud" className="h-9 w-auto object-contain shrink-0 max-w-[170px]" />
+                </Link>
+              )}
               {!collapsed && (
                 <button
                   onClick={() => setCollapsed(true)}
