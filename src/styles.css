@@ -53,8 +53,20 @@
   --color-tier-c: var(--tier-c);
 }
 
+/* Force dark dropdown options (white-on-white fix) on browsers that don't
+   fully honor color-scheme for custom-styled selects. */
+select option,
+select optgroup {
+  background-color: var(--popover);
+  color: var(--popover-foreground);
+}
+
 :root {
   --radius: 0.5rem;
+
+  /* Render native form controls (select option popups, date pickers, scrollbars)
+     in dark mode so dropdown options aren't white-on-white. */
+  color-scheme: dark;
 
   /* Deep slate-navy enterprise palette */
   --background: oklch(0.18 0.025 250);
