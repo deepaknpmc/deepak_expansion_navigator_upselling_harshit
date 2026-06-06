@@ -3,6 +3,8 @@
 // Run: npm run sync:adoption
 import { MongoClient } from "mongodb";
 import { randomUUID } from "node:crypto";
+import dns from "node:dns";
+dns.setServers(["8.8.8.8", "1.1.1.1"]);
 
 const uri = process.env.MONGODB_URI;
 const appDbName = process.env.APP_DB || "expansion_navigator";
@@ -28,8 +30,8 @@ function toRow(doc) {
   const systems = pick(doc, "current_systems", "currentSystems", "Current Systems", "modules_list");
   return {
     customer_name: String(pick(doc, "customer_name", "customerName", "name", "Customer", "Customer Name") ?? ""),
-    adoption: numOrU(pick(doc, "adoption", "adoptionScore", "adoption_percent", "Adoption %", "score")),
-    no_modules: numOrU(pick(doc, "no_modules", "noModules", "No Modules", "modules")),
+    adoption: numOrU(pick(doc, "adoption_", "adoption", "adoptionScore", "adoption_percent", "Adoption %", "score")),
+    no_modules: numOrU(pick(doc, "no_of_modules", "no_modules", "noModules", "No Modules", "modules")),
     current_systems: Array.isArray(systems)
       ? systems
       : typeof systems === "string" && systems
@@ -66,21 +68,18 @@ try {
       unmatched.push(r.customer_name);
       continue;
     }
-    await appDb.collection("customers").updateOne(
-      { _id: id },
-      {
-        $set: {
-          adoption: r.adoption ?? 0,
-          noModules: r.no_modules ?? 0,
-          currentSystems: r.current_systems ?? [],
-          adoptionPoc: r.adoption_poc ?? "",
-          salesPoc: r.sales_poc ?? "",
-          customerAge: r.customer_age ?? 0,
-          cluster: r.cluster ?? "",
-          state: r.state ?? "",
-        },
-      },
-    );
+    const set = {};
+    if (r.adoption !== undefined) set.adoption = r.adoption;
+    if (r.no_modules !== undefined) set.noModules = r.no_modules;
+    if (r.current_systems !== undefined && r.current_systems.length) set.currentSystems = r.current_systems;
+    if (r.adoption_poc) set.adoptionPoc = r.adoption_poc;
+    if (r.sales_poc) set.salesPoc = r.sales_poc;
+    if (r.customer_age !== undefined) set.customerAge = r.customer_age;
+    if (r.cluster) set.cluster = r.cluster;
+    if (r.state) set.state = r.state;
+    if (Object.keys(set).length) {
+      await appDb.collection("customers").updateOne({ _id: id }, { $set: set });
+    }
     updated++;
   }
 

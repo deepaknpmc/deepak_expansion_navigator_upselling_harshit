@@ -78,21 +78,20 @@ async function mergeAdoptionRows(
       unmatched.push(r.customer_name);
       continue;
     }
-    await db.collection(collections.customers).updateOne(
-      { _id: id },
-      {
-        $set: {
-          adoption: r.adoption ?? 0,
-          noModules: r.no_modules ?? 0,
-          currentSystems: r.current_systems ?? [],
-          adoptionPoc: r.adoption_poc ?? "",
-          salesPoc: r.sales_poc ?? "",
-          customerAge: r.customer_age ?? 0,
-          cluster: r.cluster ?? "",
-          state: r.state ?? "",
-        },
-      },
-    );
+    // Only write fields actually present in the source row, so a sync never
+    // clobbers existing customer data (e.g. seeded currentSystems) with blanks.
+    const $set: Record<string, unknown> = {};
+    if (r.adoption !== undefined) $set.adoption = r.adoption;
+    if (r.no_modules !== undefined) $set.noModules = r.no_modules;
+    if (r.current_systems !== undefined && r.current_systems.length) $set.currentSystems = r.current_systems;
+    if (r.adoption_poc) $set.adoptionPoc = r.adoption_poc;
+    if (r.sales_poc) $set.salesPoc = r.sales_poc;
+    if (r.customer_age !== undefined) $set.customerAge = r.customer_age;
+    if (r.cluster) $set.cluster = r.cluster;
+    if (r.state) $set.state = r.state;
+    if (Object.keys($set).length) {
+      await db.collection(collections.customers).updateOne({ _id: id }, { $set });
+    }
     updated++;
   }
 
@@ -130,8 +129,10 @@ function sourceDocToRow(doc: any): AdoptionRow {
     customer_name: String(
       pick("customer_name", "customerName", "name", "Customer", "Customer Name") ?? "",
     ),
-    adoption: num(pick("adoption", "adoptionScore", "adoption_percent", "Adoption %", "score")),
-    no_modules: num(pick("no_modules", "noModules", "No Modules", "modules")),
+    // deepak_sheets.sheets_revised_adoption_score stores the score in `adoption_`
+    // (e.g. "100%"); `num` strips the % sign.
+    adoption: num(pick("adoption_", "adoption", "adoptionScore", "adoption_percent", "Adoption %", "score")),
+    no_modules: num(pick("no_of_modules", "no_modules", "noModules", "No Modules", "modules")),
     current_systems: Array.isArray(systems)
       ? systems
       : typeof systems === "string" && systems

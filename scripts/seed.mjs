@@ -1,6 +1,8 @@
 // Seed the MongoDB `customers` collection from src/data/customers.json.
 // Run: npm run seed   (uses .env via node --env-file)
 import { MongoClient } from "mongodb";
+import dns from "node:dns";
+dns.setServers(["8.8.8.8", "1.1.1.1"]);
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
