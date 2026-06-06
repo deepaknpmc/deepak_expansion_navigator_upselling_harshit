@@ -7,10 +7,12 @@ Internal expansion / upselling intelligence dashboard. TanStack Start (React 19)
 
 - **Frontend/SSR:** TanStack Start, built with Vite + Nitro (`vercel` preset).
 - **Data:** MongoDB. Two databases on the same Atlas cluster:
-  - `expansion_navigator` (app data): `customers`, `sync_runs`, `adoption_records`.
-  - `deepak_sheet` (existing, read-only source): adoption scores, matched into
-    customers **by customer name**.
-- **Auth:** none (open internal tool). Protect via Vercel Password Protection.
+  - `expansion_navigator` (app data): `customers`, `sync_runs`, `adoption_records`, `users`.
+  - `deepak_sheets` (existing, read-only source): adoption scores in
+    `sheets_revised_adoption_score`, matched into customers **by customer name**.
+- **Auth:** email/password login. Users live in the `users` collection
+  (bcrypt-hashed). A signed httpOnly cookie holds the session; `requireAuth`
+  middleware guards every data server-function.
 
 Customers are stored as **one document each**, shaped like the `Customer` type in
 `src/data/sample.ts` (no joins). Server functions live in `src/lib/*.functions.ts`.
@@ -23,11 +25,21 @@ Copy `.env.example` → `.env` and fill in:
 | --- | --- |
 | `MONGODB_URI` | Atlas connection string (`mongodb+srv://…`) |
 | `APP_DB` | App database name (default `expansion_navigator`) |
-| `ADOPTION_DB` | Existing adoption-source DB (default `deepak_sheet`) |
-| `ADOPTION_COLLECTION` | Collection in `ADOPTION_DB` holding adoption rows |
+| `ADOPTION_DB` | Existing adoption-source DB (default `deepak_sheets`) |
+| `ADOPTION_COLLECTION` | Collection in `ADOPTION_DB` (default `sheets_revised_adoption_score`) |
+| `AUTH_SECRET` | Long random string used to sign login session cookies |
 
 Set the same vars in the Vercel project settings. Allow Vercel egress in Atlas
 Network Access (or `0.0.0.0/0`).
+
+## Users / login
+
+```bash
+npm run add-user -- <email> <password> ["Full Name"]   # create or update a login
+```
+
+Re-running with the same email updates that user's password. There's no public
+sign-up — accounts are created with this command only.
 
 ## Scripts
 
@@ -48,11 +60,19 @@ npm run sync:adoption    # pull adoption scores from deepak_sheet into customers
 `customerAge`, `cluster`, `state`). Expansion-owned fields (pitch, confidence,
 upsell value, status, notes, …) are **never** touched by a sync.
 
-Two ways to sync:
-1. **In-app** (Settings → Adoption Sync): upload a CSV, then "Sync".
-2. **From deepak_sheet**: `npm run sync:adoption` (or the `syncAdoptionFromSource`
-   server function). Field names are auto-mapped; adjust `sourceDocToRow` in
-   `src/lib/adoption.functions.ts` if the source schema differs.
+The score field in the sheet is `adoption_` (e.g. `"100%"`); modules is
+`no_of_modules`. A sync only writes fields present in the source, so it never
+overwrites existing customer data with blanks.
+
+Ways to sync:
+1. **Scheduled (automatic):** a GitHub Action (`.github/workflows/sync-adoption.yml`)
+   runs `scripts/sync-adoption.mjs` at **08:00 and 20:00 IST** (cron `30 2,14 * * *`
+   UTC) and on manual **Run workflow**. Needs repo secret `MONGODB_URI`.
+2. **Local:** `npm run sync:adoption`.
+3. **In-app** (Settings → Adoption Sync): upload a CSV, then "Sync".
+
+The site reads MongoDB live, so a sync updates the live app immediately — **no
+redeploy needed**. A deploy only ships code changes.
 
 ## Deploy (Vercel)
 
