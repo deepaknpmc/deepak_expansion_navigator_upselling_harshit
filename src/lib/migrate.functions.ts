@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getDb, collections } from "@/integrations/mongo/client.server";
+import { requireAuth } from "@/integrations/auth/require-auth";
 import type { Customer } from "@/data/sample";
 
 /**
@@ -7,6 +8,7 @@ import type { Customer } from "@/data/sample";
  * Idempotent: safe to re-run; existing customer documents are replaced.
  */
 export const migrateBackup = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
   .inputValidator((input: { customers: Customer[] }) => input)
   .handler(async ({ data }) => {
     const db = await getDb();

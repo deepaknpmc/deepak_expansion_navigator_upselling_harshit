@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { randomUUID } from "node:crypto";
+import { requireAuth } from "@/integrations/auth/require-auth";
 import {
   getDb,
   getAdoptionSourceDb,
@@ -149,6 +150,7 @@ function sourceDocToRow(doc: any): AdoptionRow {
 // ---- CSV staging path -------------------------------------------------------
 
 export const uploadAdoptionRecords = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
   .inputValidator((input: { rows: AdoptionRow[]; source?: string }) => input)
   .handler(async ({ data }) => {
     const db = await getDb();
@@ -179,7 +181,7 @@ export const uploadAdoptionRecords = createServerFn({ method: "POST" })
     return { staged: payload.length };
   });
 
-export const listAdoptionRecords = createServerFn({ method: "GET" }).handler(async () => {
+export const listAdoptionRecords = createServerFn({ method: "GET" }).middleware([requireAuth]).handler(async () => {
   const db = await getDb();
   const records = await db
     .collection(collections.adoptionRecords)
@@ -188,7 +190,7 @@ export const listAdoptionRecords = createServerFn({ method: "GET" }).handler(asy
   return { records };
 });
 
-export const getLastSyncRun = createServerFn({ method: "GET" }).handler(async () => {
+export const getLastSyncRun = createServerFn({ method: "GET" }).middleware([requireAuth]).handler(async () => {
   const db = await getDb();
   const run = await db
     .collection(collections.syncRuns)
@@ -196,7 +198,7 @@ export const getLastSyncRun = createServerFn({ method: "GET" }).handler(async ()
   return { run };
 });
 
-export const listSyncRuns = createServerFn({ method: "GET" }).handler(async () => {
+export const listSyncRuns = createServerFn({ method: "GET" }).middleware([requireAuth]).handler(async () => {
   const db = await getDb();
   const runs = await db
     .collection(collections.syncRuns)
@@ -207,6 +209,7 @@ export const listSyncRuns = createServerFn({ method: "GET" }).handler(async () =
 
 /** Sync the CSV-staged adoption_records into customers. */
 export const syncAdoptionData = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
   .inputValidator((input: { source?: string; file_name?: string } | undefined) => input ?? {})
   .handler(async ({ data }) => {
     const db = await getDb();
@@ -234,6 +237,7 @@ export const syncAdoptionData = createServerFn({ method: "POST" })
  * and merge into customers (matched by name). This is the live cross-DB sync.
  */
 export const syncAdoptionFromSource = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
   .inputValidator((input: { collection?: string } | undefined) => input ?? {})
   .handler(async ({ data }) => {
     const sourceDb = await getAdoptionSourceDb();

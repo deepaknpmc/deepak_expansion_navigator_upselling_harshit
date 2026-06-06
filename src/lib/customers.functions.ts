@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getDb, collections } from "@/integrations/mongo/client.server";
+import { requireAuth } from "@/integrations/auth/require-auth";
 import type { Customer } from "@/data/sample";
 
 /**
@@ -23,7 +24,7 @@ function fromDoc(doc: any): Customer {
 }
 
 /** Fetch the entire shared workspace. */
-export const listCustomers = createServerFn({ method: "GET" }).handler(async () => {
+export const listCustomers = createServerFn({ method: "GET" }).middleware([requireAuth]).handler(async () => {
   const db = await getDb();
   const docs = await db
     .collection<CustomerDoc>(collections.customers)
@@ -33,7 +34,7 @@ export const listCustomers = createServerFn({ method: "GET" }).handler(async () 
 });
 
 /** Total count of customers (used for pre/post verification). */
-export const countCustomers = createServerFn({ method: "GET" }).handler(async () => {
+export const countCustomers = createServerFn({ method: "GET" }).middleware([requireAuth]).handler(async () => {
   const db = await getDb();
   const count = await db.collection(collections.customers).countDocuments();
   return { count };
@@ -41,6 +42,7 @@ export const countCustomers = createServerFn({ method: "GET" }).handler(async ()
 
 /** Upsert one customer. Used for inline edits, add, duplicate. */
 export const upsertCustomer = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
   .inputValidator((input: { customer: Customer }) => input)
   .handler(async ({ data }) => {
     const db = await getDb();
@@ -52,6 +54,7 @@ export const upsertCustomer = createServerFn({ method: "POST" })
   });
 
 export const deleteCustomer = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
   .inputValidator((input: { id: string }) => input)
   .handler(async ({ data }) => {
     const db = await getDb();

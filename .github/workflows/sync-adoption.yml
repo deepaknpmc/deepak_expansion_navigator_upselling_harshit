@@ -1,0 +1,32 @@
+name: Sync adoption scores
+
+# Pulls adoption fields from deepak_sheets.sheets_revised_adoption_score into the
+# app's `customers` collection (matched by customer name). The app reads MongoDB
+# live, so updated data appears on the site immediately — no redeploy needed.
+on:
+  schedule:
+    # 8:00 AM and 8:00 PM IST = 02:30 and 14:30 UTC
+    - cron: "30 2,14 * * *"
+  workflow_dispatch: {} # manual "Run workflow" button
+
+concurrency:
+  group: sync-adoption
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci
+      - name: Pull adoption scores into customers
+        env:
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          APP_DB: expansion_navigator
+          ADOPTION_DB: deepak_sheets
+          ADOPTION_COLLECTION: sheets_revised_adoption_score
+        run: node scripts/sync-adoption.mjs
